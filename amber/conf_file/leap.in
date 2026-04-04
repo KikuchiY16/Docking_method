@@ -1,0 +1,22 @@
+# 1. 力場のロード
+source leaprc.protein.ff14SB
+source leaprc.gaff2           # リガンド用
+source leaprc.water.tip3p     # FB版がtleapにない場合は標準tip3pで代用
+
+# 2. リガンドのパラメータ読み込み（antechamberで作成したやつ）
+loadamberparams ligand.frcmod
+LIG = loadmol2 1sre.mol2
+
+PROT = loadpdb 1sre_protein.pdb
+
+# 4. 複合体作成
+complex = combine {PROT LIG}
+
+# 5. 溶媒とイオン（OpenMMの 0.15M に合わせる）
+solvateOct complex TIP3PBOX 10.0
+addIonsRand complex Na+ 0
+addIonsRand complex Cl- 0  # 実際にはここで0.15Mになるよう個数を調整するか、OpenMMの出力を流用
+
+# 6. 保存
+saveamberparm complex complex.prmtop complex.inpcrd
+quit

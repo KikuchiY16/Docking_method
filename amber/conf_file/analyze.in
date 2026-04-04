@@ -1,0 +1,43 @@
+# トポロジーファイルの読み込み
+parm complex.prmtop
+
+# トラジェトリの読み込み
+trajin  prod.nc
+
+# --- 前処理 ---
+# 周期境界条件による分子の飛び出しを修正（可視化や解析の必須工程）
+autoimage
+
+# --- 1. 構造安定性解析 (RMSD) ---
+# 最初のフレームを基準に、重原子(C,N,O)のRMSDを計算
+rms first :1-256&!@H* out rmsd_all.dat
+# BackboneのみのRMSD
+rms first :1-256@CA,C,N out rmsd_backbone.dat
+
+# --- 2. 残基ごとの揺らぎ (RMSF) ---
+# 各残基のC-alpha原子の動きを計算
+atomicfluct :1-256@CA out rmsf.dat byres
+
+# --- 3. 回転半径 (Radius of Gyration) ---
+# 全体のコンパクトさを計算
+radgyr :1-256 out rog.dat
+
+# --- 4. 水素結合解析 ---
+# タンパク質内の水素結合を抽出
+hbond :1-256 out hbond_count.dat avgout hbond_avg.dat
+
+# --- 5. 代表構造の抽出 (Clustering) ---
+# 系が安定した後の構造を3つに分類し、代表構造をPDBで出力
+cluster C1 \
+    clusters 3 epsilon 2.0 \
+    rms :1-256@CA,C,N \
+    out cluster_info.dat \
+    repout rep repfmt pdb
+
+# --- 6. 可視化用トラジェトリの出力 ---
+# VMDやPyMOLで見るために、余計な水分子を除いて出力（任意）
+# strip :WAT
+trajout prod_processed.nc netcdf
+
+run
+quit
